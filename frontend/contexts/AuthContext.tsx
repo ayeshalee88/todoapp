@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('Error parsing user data:', error);
       }
     }
-    setLoading(false);
+   
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -115,10 +115,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isAuthenticated: !!user,
   };
-
-  if (loading) {
-    return <div>Loading...</div>; // You might want to create a proper loading component
-  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
