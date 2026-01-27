@@ -7,7 +7,7 @@ from pydantic.networks import EmailStr
 
 # User Model
 class UserBase(SQLModel):
-    email: EmailStr = Field(unique=True, nullable=False)
+    email: str = Field(unique=True, nullable=False,index=True)
 
 class User(UserBase, table=True):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)

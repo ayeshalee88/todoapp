@@ -1,6 +1,8 @@
 // API utility functions for the Todo app
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
+console.log('🔍 API URL being used:', API_BASE_URL);
+
 interface ApiResponse<T> {
   data?: T;
   error?: string;

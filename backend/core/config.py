@@ -11,3 +11,5 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
+
+print(f"Settings loaded - database_url: '{settings.database_url}'")

@@ -15,7 +15,13 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=[
+        "https://phase-ii-todo-full-stack-web-applic-pi.vercel.app",
+        "https://phase-ii-todo-full-stack-web-git-c0c5c2-ayeshaalee88s-projects.vercel.app",
+        "https://phase-ii-todo-full-stack-web-application-frontend-mnnakrnia.vercel.app",
+        "https://*.vercel.app",  # Allow all Vercel preview URLs
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
