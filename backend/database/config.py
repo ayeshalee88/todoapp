@@ -20,7 +20,7 @@ print(f"DEBUG: Final database_url = '{database_url}'")
 
 
 # Create database engine
-engine = create_engine(settings.database_url, echo=True)
+engine = create_engine(settings.database_url, echo=True,connect_args={"check_same_thread": False} if database_url.startswith("sqlite") else {},)
 SQLModel.metadata.create_all(engine)
 
 

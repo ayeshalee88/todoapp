@@ -5,6 +5,7 @@ from auth.utils import get_password_hash, create_access_token, verify_password
 from database.config import get_session
 from models.task_models import User
 from pydantic import BaseModel
+import requests
 from core.exceptions import DuplicateEmailException, InvalidCredentialsException
 
 router = APIRouter()
@@ -17,8 +18,11 @@ class LoginRequest(BaseModel):
 def signup(user: UserCreate, session: Session = Depends(get_session)):
     # Check if user already exists
     existing_user = session.query(User).filter(User.email == user.email).first()
-    if existing_user:
-        raise DuplicateEmailException()
+    if not user or not verify_password(request.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    
+    access_token = create_access_token(data={"sub": str(user.id)})
 
     # Create new user
     hashed_password = get_password_hash(user.password)
