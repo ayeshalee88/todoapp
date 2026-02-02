@@ -1,6 +1,10 @@
 ﻿import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+
+const prisma = new PrismaClient();
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -17,33 +21,39 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null;
+          throw new Error('Email and password required');
         }
 
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        try {
+          // ✅ Find user in Prisma database
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
 
-        const res = await fetch(`${apiUrl}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: credentials.email,
-            password: credentials.password,
-          }),
-        });
+          if (!user) {
+            throw new Error('No user found with this email');
+          }
 
-        if (!res.ok) return null;
+          // ✅ Verify password with bcrypt
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password || ''
+          );
 
-        const data = await res.json();
+          if (!isPasswordValid) {
+            throw new Error('Invalid password');
+          }
 
-        if (!data.access_token || !data.user_id) return null;
-
-        return {
-          id: data.user_id,
-          email: data.email,
-          name: data.email,
-          accessToken: data.access_token,
-        };
+          // ✅ Return user object
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name || user.email,
+          };
+        } catch (error) {
+          console.error('Authentication error:', error);
+          throw error;
+        }
       },
     }),
   ],
@@ -51,50 +61,39 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        try {
+          // ✅ Create or update Google user in Prisma
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email! },
+          });
 
-        const res = await fetch(`${apiUrl}/auth/google-signin`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: user.email,
-            name: user.name,
-            google_id: account.providerAccountId,
-          }),
-        });
-
-        if (!res.ok) return false;
-
-        const data = await res.json();
-
-        // attach to account (safe)
-        (account as any).access_token = data.access_token;
-        (account as any).user_id = data.user_id;
+          if (!existingUser) {
+            await prisma.user.create({
+              data: {
+                email: user.email!,
+                name: user.name,
+                image: user.image,
+              },
+            });
+          }
+        } catch (error) {
+          console.error('Google sign-in error:', error);
+          return false;
+        }
       }
 
       return true;
     },
 
-    async jwt({ token, user, account }) {
-      // Credentials login
+    async jwt({ token, user }) {
       if (user) {
-        token.accessToken = (user as any).accessToken;
         token.id = user.id;
       }
-
-      // Google login
-      if (account && (account as any).access_token) {
-        token.accessToken = (account as any).access_token;
-        token.id = (account as any).user_id;
-      }
-
       return token;
     },
 
     async session({ session, token }) {
       if (session.user) {
-        session.accessToken = token.accessToken as string;
         session.user.id = token.id as string;
       }
       return session;
