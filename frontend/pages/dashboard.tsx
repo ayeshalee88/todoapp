@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 import { GetServerSideProps } from 'next';
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "./api/auth/[...nextauth]";
+import { authOptions } from "@/lib/auth-config";
 import TaskCard from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
 import { apiClient } from '../lib/api';
